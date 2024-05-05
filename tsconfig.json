@@ -1,3 +1,46 @@
 {
+  "compilerOptions": {
+    "jsx": "react",
+  },
   "extends": "astro/tsconfigs/base"
 }
+// {
+//   "compilerOptions": {
+//     "outDir": "static/js",
+//     "skipLibCheck": true,
+//     "strict": false,
+//     "resolveJsonModule": true,
+//     "module": "esnext",
+//     "target": "ES2017",
+
+//     "moduleResolution": "node",
+//     "allowJs": true,
+//     "checkJs": false,
+//     "experimentalDecorators": true,
+//     "emitDecoratorMetadata": true,
+//     "allowSyntheticDefaultImports": true,
+//     "strictBindCallApply": true,
+//     "lib": ["DOM", "DOM.Iterable", "ESNext", "ES2017"],
+//     "esModuleInterop": true,
+//     // Ensure that .d.ts files are created by tsc, but not .js files
+//     "declaration": true,
+//     "emitDeclarationOnly": true,
+//     // Ensure that Babel can safely transpile files in the TypeScript project
+//     "isolatedModules": true,
+//     "baseUrl": ".",
+//     "types": ["node", "jest", "@testing-library/jest-dom", "webpack-env"],
+//     "typeRoots": ["./", "node_modules/@types"],
+//     "paths": {
+//       "~app/*": ["./src/__fsd__/1-app/*"],
+//       "~pages/*": ["./src/__fsd__/2-pages/*"],
+//       "~widgets/*": ["./src/__fsd__/3-widgets/*"],
+//       "~features/*": ["./src/__fsd__/4-features/*"],
+//       "~entities/*": ["./src/__fsd__/5-entities/*"],
+//       "~shared/*": ["./src/__fsd__/6-shared/*"],
+//       "~n/*": ["./src/__new__/*"],
+//       "~jest/*": ["./src/__jest__/*"],
+//       "~/*": ["./src/*"]
+//     }
+//   },
+//   "exclude": ["node_modules", "dist", "build", "coverage", ".design-system", "./src/__fsd__/4-features/advanced-filter/**/*.test.tsx"]//ADV TODO fix tests
+// }

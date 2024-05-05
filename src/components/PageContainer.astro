@@ -1,0 +1,10 @@
+---
+import { MiniDrawer } from "./SideBar";
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Jbuilder">
+  <MiniDrawer client:only>
+    <slot />
+  </MiniDrawer>
+</Layout>

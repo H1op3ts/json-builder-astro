@@ -1,6 +1,9 @@
 ---
+import 'react-grid-layout/css/styles.css'
+import 'react-resizable/css/styles.css'
 export interface Props {
 	title: string;
+	children?: any
 }
 
 const { title } = Astro.props;
@@ -12,7 +15,6 @@ const { title } = Astro.props;
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 	</head>
 	<body>
@@ -31,5 +33,10 @@ const { title } = Astro.props;
 	code {
 		font-family: Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono,
 			Bitstream Vera Sans Mono, Courier New, monospace;
+	}
+	.react-grid-item:not(.react-grid-placeholder) {
+		background: #ccc;
+		border: 1px solid black;
+		cursor: pointer;
 	}
 </style>
