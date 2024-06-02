@@ -21,7 +21,7 @@ export const GridLayout: FC = () => {
         Displayed as <code>[x, y, w, h]</code>:
         <div className="columns">{stringifyLayout()}</div>
       </div>
-      <ShowLayout onLayoutChange={setLayout} />
+      <ShowLayout layout={layout} onLayoutChange={setLayout} />
     </div>
   );
 };

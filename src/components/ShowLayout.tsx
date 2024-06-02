@@ -4,10 +4,14 @@ import capitalize from "lodash/capitalize";
 import random from "lodash/random";
 import range from "lodash/range";
 import { Responsive, WidthProvider } from "react-grid-layout";
+import { Preview } from "./Preview";
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 
+export const DEFAULT_GAP = 10;
+export const DEFAULT_PADDING = 10;
+
 function generateLayout() {
-  return map(range(0, 25), function (item, i) {
+  return map(range(0, 6), function (item, i) {
     var y = Math.ceil(Math.random() * 4) + 1;
     return {
       x: (random(0, 5) * 2) % 12,
@@ -27,10 +31,11 @@ export const ShowLayout = (props) => {
     onLayoutChange = function () {},
     cols = { lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 },
     initialLayout = generateLayout(),
+    layout,
   } = props;
 
   const [currentBreakpoint, setCurrentBreakpoint] = useState("lg");
-  const [compactType, setCompactType] = useState("vertical");
+  const [compactType, setCompactType] = useState("horizontal");
   const [mounted, setMounted] = useState(false);
   const [layouts, setLayouts] = useState({ lg: initialLayout });
 
@@ -61,25 +66,9 @@ export const ShowLayout = (props) => {
     setCurrentBreakpoint(breakpoint);
   };
 
-  const onCompactTypeChange = () => {
-    const newCompactType =
-      compactType === "horizontal"
-        ? "vertical"
-        : compactType === "vertical"
-        ? null
-        : "horizontal";
-    setCompactType(newCompactType);
-  };
-
   const handleLayoutChange = (layout, layouts) => {
     props.onLayoutChange(layout, layouts);
   };
-
-  const onNewLayout = () => {
-    setLayouts({ lg: generateLayout() });
-  };
-
-  console.log(layouts);
 
   return (
     <div>
@@ -88,23 +77,20 @@ export const ShowLayout = (props) => {
         columns)
       </div>
       <div>Compaction type: {capitalize(compactType) || "No Compaction"}</div>
-      <button onClick={onNewLayout}>Generate New Layout</button>
-      <button onClick={onCompactTypeChange}>Change Compaction Type</button>
       <ResponsiveReactGridLayout
         {...props}
+        margin={[DEFAULT_GAP, DEFAULT_GAP]}
         layouts={layouts}
         onBreakpointChange={onBreakpointChange}
         onLayoutChange={handleLayoutChange}
-        // WidthProvider option
         measureBeforeMount={false}
-        // I like to have it animate on mount. If you don't, delete `useCSSTransforms` (it's default `true`)
-        // and set `measureBeforeMount={true}`.
         useCSSTransforms={mounted}
         compactType={compactType}
         preventCollision={!compactType}
       >
         {generateDOM()}
       </ResponsiveReactGridLayout>
+      <Preview layout={layout} colsCount={cols[currentBreakpoint]} />
     </div>
   );
 };
