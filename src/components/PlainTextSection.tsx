@@ -1,12 +1,13 @@
 import React, { FC, useEffect, useRef, useState } from "react";
 import range from "lodash/range";
-import { DEFAULT_GAP, DEFAULT_PADDING } from "./ShowLayout";
 import ReactGridLayout from "react-grid-layout";
 import { TSetMeasurements } from "./types";
 import {
   CONTENT,
   CURRENT_FORMAT,
+  DEFAULT_GAP,
   DEFAULT_LINEHEIGHT,
+  DEFAULT_PADDING,
   DIMENSIONS,
 } from "./constants";
 
@@ -35,7 +36,7 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = ({
   sectionIndex,
 }) => {
   const contentNode = useRef(null);
-  const containerNode = useRef(null);
+  const contentWindowNode = useRef(null);
 
   const reservedHeight = DEFAULT_GAP * 2; //all fixed heights
 
@@ -56,7 +57,7 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = ({
       DIMENSIONS[CURRENT_FORMAT].height - reservedHeight - DEFAULT_PADDING * 2; //calc available height if some content present
 
     containerHeight ||=
-      containerNode.current?.offsetHeight || availablePageSectionHeight;
+      contentWindowNode.current?.offsetHeight || availablePageSectionHeight;
 
     const maxLinesPerPage = Math.floor(containerHeight / lineHeight) || 1;
 
@@ -80,21 +81,20 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = ({
     }
   }, [contentNode.current, layout]);
 
-  const style: React.CSSProperties = {
+  const containerStyle: React.CSSProperties = {
     width: gridItemRelativeWidth * layout.w + (layout.w - 1) * DEFAULT_GAP,
     position: "absolute",
-    //maxHeight: containerHeight,
     height: `calc(100% - ${reservedHeight}px)`,
     transform: `translate(${
       layout.x * gridItemRelativeWidth + (layout.x + 1) * DEFAULT_GAP
     }px, ${(layout.y + 1) * DEFAULT_GAP}px)`,
     padding: DEFAULT_PADDING,
-    background: "green",
     overflow: "hidden",
   };
 
   const contentWindowStyle: React.CSSProperties = {
-    height: "100%",
+    height: "100%", //
+    background: "green",
     width: "100%",
     position: "relative",
     overflow: "hidden",
@@ -110,8 +110,8 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = ({
   };
 
   return (
-    <div style={style}>
-      <div ref={containerNode} style={contentWindowStyle}>
+    <div style={containerStyle}>
+      <div ref={contentWindowNode} style={contentWindowStyle}>
         <div ref={contentNode} style={contentInnerStyle}>
           {layout.i === "0" ? CONTENT : <b>{layout.i}</b>}
         </div>

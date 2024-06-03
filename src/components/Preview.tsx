@@ -1,9 +1,8 @@
 import React, { FC, useEffect, useRef, useState } from "react";
-import { DEFAULT_GAP } from "./ShowLayout";
 import ReactGridLayout from "react-grid-layout";
 import { PlainTextSection } from "./PlainTextSection";
 import { TSetMeasurements } from "./types";
-import { CURRENT_FORMAT, DIMENSIONS } from "./constants";
+import { CURRENT_FORMAT, DEFAULT_GAP, DIMENSIONS } from "./constants";
 
 type TPreviewProps = {
   layout: ReactGridLayout.Layout[];
