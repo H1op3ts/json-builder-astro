@@ -1,25 +1,27 @@
-import React, { FC, useEffect, useRef, useState } from "react";
 import range from "lodash/range";
+import React, { FC, useEffect, useRef, useState } from "react";
 import ReactGridLayout from "react-grid-layout";
-import { TSetMeasurements } from "./types";
 import {
   CONTENT,
   CURRENT_FORMAT,
   DEFAULT_GAP,
-  DEFAULT_LINEHEIGHT,
   DEFAULT_PADDING,
   DIMENSIONS,
 } from "./constants";
+import { TSetMeasurements } from "./types";
 
 type TSectionPageMeasurements = {
   scrollTop: number;
   containerHeight: number;
+  index: number;
+  isLast: boolean;
 };
 
 type TPlainTextSectionProps = {
   layout: ReactGridLayout.Layout;
   scrollTop: number;
   containerHeight: number;
+  isLast: boolean;
   onSetMeasurements: TSetMeasurements;
   gridItemRelativeWidth: number;
   pageIndex: number;
@@ -31,6 +33,7 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = ({
   gridItemRelativeWidth,
   scrollTop = 0,
   containerHeight = 0,
+  isLast,
   onSetMeasurements,
   pageIndex,
   sectionIndex,
@@ -40,18 +43,18 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = ({
 
   const reservedHeight = DEFAULT_GAP * 2; //all fixed heights
 
+  const [contentWindowHeight, setH] = useState("100%");
+
   useEffect(() => {
-    const lineHeight = parseInt(
-      contentNode?.current
-        ? window.getComputedStyle(contentNode.current).lineHeight
-        : DEFAULT_LINEHEIGHT.toString()
+    if (!contentNode.current) return;
+    const computedStyle = window.getComputedStyle(contentNode.current);
+    setH(
+      isLast ? `${parseInt(computedStyle.height) % containerHeight}px` : "100%"
     );
-    const computedStyle = contentNode.current
-      ? window.getComputedStyle(contentNode.current)
-      : null;
-    const totalLinesCount = computedStyle
-      ? Math.ceil(parseInt(computedStyle.height) / lineHeight)
-      : 0;
+    const lineHeight = parseInt(computedStyle.lineHeight);
+    const totalLinesCount = Math.ceil(
+      parseInt(computedStyle.height) / lineHeight
+    );
 
     const availablePageSectionHeight =
       DIMENSIONS[CURRENT_FORMAT].height - reservedHeight - DEFAULT_PADDING * 2; //calc available height if some content present
@@ -62,24 +65,25 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = ({
     const maxLinesPerPage = Math.floor(containerHeight / lineHeight) || 1;
 
     const pagesCountToFitContent = isNaN(maxLinesPerPage)
-      ? 1
+      ? 0
       : Math.ceil(totalLinesCount / maxLinesPerPage);
     if (
       pageIndex === 0 &&
       pagesCountToFitContent &&
       !isNaN(pagesCountToFitContent)
     ) {
-      const measurements = range(0, pagesCountToFitContent).map(
-        (i: number): TSectionPageMeasurements => {
-          return {
-            scrollTop: -(maxLinesPerPage * i * lineHeight),
-            containerHeight: maxLinesPerPage * lineHeight,
-          };
-        }
-      );
+      const pages = range(0, pagesCountToFitContent);
+      const measurements = pages.map((i: number): TSectionPageMeasurements => {
+        return {
+          scrollTop: -(maxLinesPerPage * i * lineHeight),
+          containerHeight: maxLinesPerPage * lineHeight,
+          index: i,
+          isLast: i === pagesCountToFitContent - 1,
+        };
+      });
       onSetMeasurements(sectionIndex, measurements);
     }
-  }, [contentNode.current, layout]);
+  }, [contentNode.current, layout, isLast]);
 
   const containerStyle: React.CSSProperties = {
     width: gridItemRelativeWidth * layout.w + (layout.w - 1) * DEFAULT_GAP,
@@ -93,7 +97,7 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = ({
   };
 
   const contentWindowStyle: React.CSSProperties = {
-    height: "100%", //
+    height: contentWindowHeight,
     background: "green",
     width: "100%",
     position: "relative",
@@ -113,7 +117,7 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = ({
     <div style={containerStyle}>
       <div ref={contentWindowNode} style={contentWindowStyle}>
         <div ref={contentNode} style={contentInnerStyle}>
-          {layout.i === "0" ? CONTENT : <b>{layout.i}</b>}
+          {sectionIndex === "0" ? CONTENT : <b>{sectionIndex}</b>}
         </div>
       </div>
     </div>

@@ -1,8 +1,8 @@
 import React, { FC, useEffect, useRef, useState } from "react";
 import ReactGridLayout from "react-grid-layout";
+import { CURRENT_FORMAT, DEFAULT_GAP, DIMENSIONS } from "./constants";
 import { PlainTextSection } from "./PlainTextSection";
 import { TSetMeasurements } from "./types";
-import { CURRENT_FORMAT, DEFAULT_GAP, DIMENSIONS } from "./constants";
 
 type TPreviewProps = {
   layout: ReactGridLayout.Layout[];
@@ -71,10 +71,11 @@ export const Preview: FC<TPreviewProps> = ({ colsCount, layout }) => {
 
               return (
                 <PlainTextSection
-                  key={l.i}
+                  key={`${l.i}_${pageIndex}`}
                   layout={l}
                   scrollTop={sections[l.i]?.scrollTop}
                   containerHeight={sections[l.i]?.containerHeight}
+                  isLast={sections[l.i]?.isLast}
                   gridItemRelativeWidth={gridItemRelativeWidth}
                   onSetMeasurements={handleSetMeasurements}
                   pageIndex={pageIndex}
