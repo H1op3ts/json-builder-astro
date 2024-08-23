@@ -10,6 +10,8 @@ import {
 } from "./constants";
 import { TSetMeasurements } from "./types";
 
+const DEFAULT_CONTENT_WINDOW_HEIGHT = "100%";
+
 type TSectionPageMeasurements = {
   scrollTop: number;
   containerHeight: number;
@@ -43,13 +45,17 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = ({
 
   const reservedHeight = DEFAULT_GAP * 2; //all fixed heights
 
-  const [contentWindowHeight, setH] = useState("100%");
+  const [contentWindowHeight, setContentWindowHeight] = useState(
+    DEFAULT_CONTENT_WINDOW_HEIGHT
+  );
 
   useEffect(() => {
     if (!contentNode.current) return;
     const computedStyle = window.getComputedStyle(contentNode.current);
-    setH(
-      isLast ? `${parseInt(computedStyle.height) % containerHeight}px` : "100%"
+    setContentWindowHeight(
+      isLast
+        ? `${parseInt(computedStyle.height) % containerHeight}px`
+        : DEFAULT_CONTENT_WINDOW_HEIGHT
     );
     const lineHeight = parseInt(computedStyle.lineHeight);
     const totalLinesCount = Math.ceil(
@@ -88,6 +94,11 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = ({
   const containerStyle: React.CSSProperties = {
     width: gridItemRelativeWidth * layout.w + (layout.w - 1) * DEFAULT_GAP,
     position: "absolute",
+    display: "block",
+    maxHeight:
+      contentWindowHeight === DEFAULT_CONTENT_WINDOW_HEIGHT
+        ? "unset"
+        : parseInt(contentWindowHeight) + DEFAULT_PADDING,
     height: `calc(100% - ${reservedHeight}px)`,
     transform: `translate(${
       layout.x * gridItemRelativeWidth + (layout.x + 1) * DEFAULT_GAP

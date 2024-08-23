@@ -69,6 +69,10 @@ export const Preview: FC<TPreviewProps> = ({ colsCount, layout }) => {
                 return null;
               }
 
+              if (pageIndex > 0 && !sections[l.i]) {
+                return null;
+              }
+
               return (
                 <PlainTextSection
                   key={`${l.i}_${pageIndex}`}
