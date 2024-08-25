@@ -2,8 +2,9 @@ import capitalize from "lodash/capitalize";
 import map from "lodash/map";
 import random from "lodash/random";
 import range from "lodash/range";
-import React, { useEffect, useState } from "react";
-import { Responsive, WidthProvider } from "react-grid-layout";
+import uniqBy from "lodash/uniqBy";
+import React, { FC, useEffect, useState } from "react";
+import { Layout, Responsive, WidthProvider } from "react-grid-layout";
 import { Preview } from "./Preview";
 import {
   COLS_COUNT,
@@ -38,7 +39,7 @@ const LAYOUT_1 = [
     static: false,
   },
   {
-    x: 3,
+    x: 4,
     y: 0,
     w: 4,
     h: 2,
@@ -66,13 +67,59 @@ const LAYOUT_1 = [
   },
 ];
 
-export const ShowLayout = (props) => {
+const calculateDirectShifts = (layout: Layout[], l: Layout) => {
+  return layout.filter((la) => {
+    const curCols = Array(l.w)
+      .fill(0)
+      .map((_, i) => l.x + i);
+    const compareCols = Array(la.w)
+      .fill(0)
+      .map((_, i) => la.x + i);
+
+    const hasIntersection = curCols.some((i) => compareCols.includes(i));
+
+    return la.y < l.y && hasIntersection;
+  });
+};
+
+const calculateShifts = (layout: Layout[], l: Layout) => {
+  const directShifts = calculateDirectShifts(layout, l);
+  const indirectShifts = directShifts
+    .map((indSh) => calculateDirectShifts(layout, indSh))
+    .flat();
+  return uniqBy([...directShifts, ...indirectShifts], "i");
+};
+
+const calculateShiftTree = (layout: Layout[]) => {
+  const groupedLayouts = layout.reduce((all, layo) => {
+    all.push([layo, ...calculateShifts(layout, layo)]); //tree structure shifts
+    return all;
+  }, [] as Layout[][]);
+  return groupedLayouts
+    .filter(
+      (checkLayouts) =>
+        !groupedLayouts.some(
+          (targetLayouts) =>
+            checkLayouts !== targetLayouts &&
+            checkLayouts.every((l) => targetLayouts.includes(l))
+        )
+    )
+    .map((layouts) => layouts.map((l) => l.i));
+};
+
+type TShowLayoutProps = {
+  initialLayout?: typeof LAYOUT_1;
+  layout: Layout[];
+  onLayoutChange: React.Dispatch<React.SetStateAction<Layout[]>>;
+};
+
+export const ShowLayout: FC<TShowLayoutProps> = (props) => {
   const { initialLayout = LAYOUT_1, layout } = props;
 
   const [currentBreakpoint, setCurrentBreakpoint] = useState("lg");
   const [compactType, setCompactType] = useState(null);
   const [mounted, setMounted] = useState(false);
-  const [layouts, setLayouts] = useState({ lg: [] });
+  const [layouts, setLayouts] = useState({ lg: [] as Layout[] });
 
   useEffect(() => {
     setMounted(true);
@@ -102,26 +149,16 @@ export const ShowLayout = (props) => {
     setCurrentBreakpoint(breakpoint);
   };
 
-  const handleLayoutChange = (layout, layouts) => {
-    props.onLayoutChange(layout, layouts);
+  const handleLayoutChange = (layout: Layout[]) => {
+    props.onLayoutChange(layout);
   };
 
-  const pushedLayout = layout.map((l) => ({
-    ...l,
-    pushedBy: layout
-      .filter((la) => {
-        const curCols = Array(l.w)
-          .fill(0)
-          .map((_, i) => l.x + i);
-        const compareCols = Array(la.w)
-          .fill(0)
-          .map((_, i) => la.x + i);
-
-        const hasIntersection = curCols.some((i) => compareCols.includes(i));
-        return la.y < l.y && hasIntersection;
-      })
-      .map((lay) => lay.i),
-  }));
+  const pushedLayout = layout.map((l) => {
+    return {
+      ...l,
+      shiftedByTree: calculateShiftTree(calculateShifts(layout, l)),
+    };
+  });
 
   return (
     <div>

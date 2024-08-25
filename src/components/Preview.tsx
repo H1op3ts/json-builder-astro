@@ -9,14 +9,14 @@ import {
 } from "./types";
 
 type TPreviewProps = {
-  layout: (ReactGridLayout.Layout & { pushedBy: string[] })[];
+  layout: (ReactGridLayout.Layout & { shiftedByTree: string[][] })[];
   colsCount: number;
 };
 
 const DEFAULT_MEASUREMENT = {
   scrollTop: 0,
   contentWindowHeight: 0,
-  actualContainerHeight: null,
+  occupiedHeight: null,
   isLast: true,
 };
 
@@ -96,21 +96,31 @@ export const Preview: FC<TPreviewProps> = ({ colsCount, layout }) => {
                 return null;
               }
 
-              const totalOccupiedHeight = l.pushedBy.length //include gaps
-                ? pageRef.current.reduce((result, sections) => {
-                    result += l.pushedBy.reduce((acc, i) => {
-                      acc += sections[parseInt(i)]?.actualContainerHeight || 0;
-                      return acc;
-                    }, 0);
-                    return result;
-                  }, l.pushedBy.length * DEFAULT_GAP)
+              let actualShiftedBy: string[] = [];
+              let maxShift = 0;
+
+              l.shiftedByTree.forEach((shiftedBy) => {
+                const shift = shiftedBy.reduce((acc, i) => {
+                  acc += sections[parseInt(i)]?.occupiedHeight || 0;
+                  return acc;
+                }, 0);
+
+                if (shift > maxShift) {
+                  maxShift = shift;
+                  actualShiftedBy = shiftedBy;
+                }
+              });
+
+              const totalOccupiedHeight = l.shiftedByTree.length
+                ? maxShift + actualShiftedBy.length * DEFAULT_GAP // include gaps
                 : 0;
 
-              //pageOccupiedHeight
+              // calculate pageOccupiedHeight
+              // include empty rows between shifts and layout section
 
-              const contentStartPageIndex = l.pushedBy.length
+              const contentStartPageIndex = l.shiftedByTree.length
                 ? pageRef.current.reduce((result, sections, i) => {
-                    if (l.pushedBy.some((i) => sections[parseInt(i)])) {
+                    if (actualShiftedBy.some((i) => sections[parseInt(i)])) {
                       result = i;
                     }
                     return result;

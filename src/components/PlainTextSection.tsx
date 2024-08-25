@@ -58,6 +58,8 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = (props) => {
     availablePageSectionContainerHeight
   );
 
+  const offsetHeight = layout.y * ROW_HEIGHT; //split offset if it exceeds available height
+
   const translateX =
     layout.x * gridItemRelativeWidth + (layout.x + 1) * DEFAULT_GAP;
 
@@ -65,7 +67,7 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = (props) => {
     contentStartPageIndex === pageIndex
       ? totalOccupiedHeight
         ? totalOccupiedHeight
-        : layout.y * ROW_HEIGHT
+        : offsetHeight
       : 0;
 
   useEffect(() => {
@@ -79,7 +81,7 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = (props) => {
         DEFAULT_PADDING * 2;
       setActualContainerHeight(actualHeight);
       onUpdateMeasurements(pageIndex, sectionIndex, {
-        actualContainerHeight: actualHeight,
+        occupiedHeight: actualHeight,
       });
     }
   }, [isLast, contentNode.current, contentWindowHeight]);
@@ -110,7 +112,7 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = (props) => {
         return {
           scrollTop: -(maxLinesPerPage * i * lineHeight),
           contentWindowHeight: maxLinesPerPage * lineHeight,
-          actualContainerHeight: 0,
+          occupiedHeight: 0,
           isLast: i === pagesCountToFitContent - 1,
         };
       });
@@ -128,7 +130,10 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = (props) => {
       return;
     }
     onUpdateMeasurements(pageIndex, sectionIndex, {
-      actualContainerHeight: parseInt(containerComputedStyle.height),
+      occupiedHeight:
+        pageIndex === contentStartPageIndex && !totalOccupiedHeight
+          ? parseInt(containerComputedStyle.height) + offsetHeight
+          : parseInt(containerComputedStyle.height),
     });
   }, [containerComputedStyle?.height]);
 

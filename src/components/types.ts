@@ -1,7 +1,7 @@
 export type TSectionPageMeasurements = {
   scrollTop: number;
   contentWindowHeight: number;
-  actualContainerHeight: number | null;
+  occupiedHeight: number | null;
   isLast: boolean;
 };
 
