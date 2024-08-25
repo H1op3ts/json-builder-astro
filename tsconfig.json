@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "jsx": "react",
+    "strictNullChecks": true
   },
   "extends": "astro/tsconfigs/base"
 }

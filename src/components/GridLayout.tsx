@@ -1,9 +1,8 @@
-import Grid from "react-grid-layout";
 import React, { FC, useState } from "react";
 import { ShowLayout } from "./ShowLayout";
 
 export const GridLayout: FC = () => {
-  const [layout, setLayout] = useState([]);
+  const [layout, setLayout] = useState<any>([]);
 
   const stringifyLayout = () => {
     return layout.map(function (l) {

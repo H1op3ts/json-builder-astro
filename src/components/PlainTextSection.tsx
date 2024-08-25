@@ -7,125 +7,172 @@ import {
   DEFAULT_GAP,
   DEFAULT_PADDING,
   DIMENSIONS,
+  ROW_HEIGHT,
 } from "./constants";
-import { TSetMeasurements } from "./types";
-
-const DEFAULT_CONTENT_WINDOW_HEIGHT = "100%";
-
-type TSectionPageMeasurements = {
-  scrollTop: number;
-  containerHeight: number;
-  index: number;
-  isLast: boolean;
-};
+import {
+  TSectionPageMeasurements,
+  TSetMeasurements,
+  TUpdateMeasurements,
+} from "./types";
 
 type TPlainTextSectionProps = {
   layout: ReactGridLayout.Layout;
-  scrollTop: number;
-  containerHeight: number;
-  isLast: boolean;
+  totalOccupiedHeight: number;
   onSetMeasurements: TSetMeasurements;
+  onUpdateMeasurements: TUpdateMeasurements;
   gridItemRelativeWidth: number;
+  contentStartPageIndex: number;
   pageIndex: number;
   sectionIndex: string;
+  isLast;
+  contentWindowHeight: number;
+  scrollTop;
 };
 
-export const PlainTextSection: FC<TPlainTextSectionProps> = ({
-  layout,
-  gridItemRelativeWidth,
-  scrollTop = 0,
-  containerHeight = 0,
-  isLast,
-  onSetMeasurements,
-  pageIndex,
-  sectionIndex,
-}) => {
-  const contentNode = useRef(null);
-  const contentWindowNode = useRef(null);
+export const PlainTextSection: FC<TPlainTextSectionProps> = (props) => {
+  const {
+    layout,
+    gridItemRelativeWidth,
+    totalOccupiedHeight,
+    isLast,
+    contentWindowHeight,
+    contentStartPageIndex,
+    scrollTop,
+    onSetMeasurements,
+    onUpdateMeasurements,
+    pageIndex,
+    sectionIndex,
+  } = props;
 
-  const reservedHeight = DEFAULT_GAP * 2; //all fixed heights
+  const contentNode = useRef<HTMLDivElement>(null);
+  const contentWindowNode = useRef<HTMLDivElement>(null);
+  const containerNode = useRef<HTMLDivElement>(null);
+  const isMeasured = useRef(false);
 
-  const [contentWindowHeight, setContentWindowHeight] = useState(
-    DEFAULT_CONTENT_WINDOW_HEIGHT
+  const reservedHeight = DEFAULT_PADDING * 2; //all fixed heights
+
+  const availablePageSectionContainerHeight =
+    DIMENSIONS[CURRENT_FORMAT].height - reservedHeight;
+
+  const [actualContainerHeight, setActualContainerHeight] = useState<number>(
+    availablePageSectionContainerHeight
   );
+
+  const translateX =
+    layout.x * gridItemRelativeWidth + (layout.x + 1) * DEFAULT_GAP;
+
+  const translateY =
+    contentStartPageIndex === pageIndex
+      ? totalOccupiedHeight
+        ? totalOccupiedHeight
+        : layout.y * ROW_HEIGHT
+      : 0;
 
   useEffect(() => {
     if (!contentNode.current) return;
+
     const computedStyle = window.getComputedStyle(contentNode.current);
-    setContentWindowHeight(
-      isLast
-        ? `${parseInt(computedStyle.height) % containerHeight}px`
-        : DEFAULT_CONTENT_WINDOW_HEIGHT
-    );
+
+    if (isLast) {
+      const actualHeight =
+        (parseInt(computedStyle.height) % contentWindowHeight) +
+        DEFAULT_PADDING * 2;
+      setActualContainerHeight(actualHeight);
+      onUpdateMeasurements(pageIndex, sectionIndex, {
+        actualContainerHeight: actualHeight,
+      });
+    }
+  }, [isLast, contentNode.current, contentWindowHeight]);
+
+  useEffect(() => {
+    if (!contentNode.current || !containerNode.current) return;
+    const computedStyle = window.getComputedStyle(contentNode.current);
     const lineHeight = parseInt(computedStyle.lineHeight);
     const totalLinesCount = Math.ceil(
       parseInt(computedStyle.height) / lineHeight
     );
-
-    const availablePageSectionHeight =
-      DIMENSIONS[CURRENT_FORMAT].height - reservedHeight - DEFAULT_PADDING * 2; //calc available height if some content present
-
-    containerHeight ||=
-      contentWindowNode.current?.offsetHeight || availablePageSectionHeight;
-
-    const maxLinesPerPage = Math.floor(containerHeight / lineHeight) || 1;
-
+    const maxLinesPerPage =
+      Math.floor(
+        (availablePageSectionContainerHeight - DEFAULT_PADDING * 2) / lineHeight
+      ) || 1;
     const pagesCountToFitContent = isNaN(maxLinesPerPage)
       ? 0
       : Math.ceil(totalLinesCount / maxLinesPerPage);
+
     if (
-      pageIndex === 0 &&
+      !isMeasured.current &&
+      contentStartPageIndex === pageIndex &&
       pagesCountToFitContent &&
       !isNaN(pagesCountToFitContent)
     ) {
-      const pages = range(0, pagesCountToFitContent);
+      const pages = range(0, pagesCountToFitContent + contentStartPageIndex);
       const measurements = pages.map((i: number): TSectionPageMeasurements => {
         return {
           scrollTop: -(maxLinesPerPage * i * lineHeight),
-          containerHeight: maxLinesPerPage * lineHeight,
-          index: i,
+          contentWindowHeight: maxLinesPerPage * lineHeight,
+          actualContainerHeight: 0,
           isLast: i === pagesCountToFitContent - 1,
         };
       });
       onSetMeasurements(sectionIndex, measurements);
+      isMeasured.current = true;
     }
-  }, [contentNode.current, layout, isLast]);
+  }, [contentNode.current, layout]);
+
+  const containerComputedStyle = containerNode.current
+    ? window.getComputedStyle(containerNode.current)
+    : null;
+
+  useEffect(() => {
+    if (!containerComputedStyle || !isMeasured.current) {
+      return;
+    }
+    onUpdateMeasurements(pageIndex, sectionIndex, {
+      actualContainerHeight: parseInt(containerComputedStyle.height),
+    });
+  }, [containerComputedStyle?.height]);
+
+  useEffect(() => {
+    if (!isMeasured.current || !totalOccupiedHeight || isLast) {
+      return;
+    }
+    const actualHeight =
+      availablePageSectionContainerHeight - totalOccupiedHeight;
+    setActualContainerHeight(actualHeight);
+  }, [totalOccupiedHeight]);
 
   const containerStyle: React.CSSProperties = {
     width: gridItemRelativeWidth * layout.w + (layout.w - 1) * DEFAULT_GAP,
     position: "absolute",
     display: "block",
-    maxHeight:
-      contentWindowHeight === DEFAULT_CONTENT_WINDOW_HEIGHT
-        ? "unset"
-        : parseInt(contentWindowHeight) + DEFAULT_PADDING,
-    height: `calc(100% - ${reservedHeight}px)`,
-    transform: `translate(${
-      layout.x * gridItemRelativeWidth + (layout.x + 1) * DEFAULT_GAP
-    }px, ${(layout.y + 1) * DEFAULT_GAP}px)`,
+    height: actualContainerHeight ? `${actualContainerHeight}px` : "100%",
+    transform: `translate(${translateX}px, ${translateY + DEFAULT_PADDING}px)`,
     padding: DEFAULT_PADDING,
     overflow: "hidden",
   };
 
   const contentWindowStyle: React.CSSProperties = {
-    height: contentWindowHeight,
+    height: "100%",
     background: "green",
     width: "100%",
     position: "relative",
     overflow: "hidden",
     textOverflow: "ellipsis",
-    maxHeight: containerHeight,
+    maxHeight: contentWindowHeight,
   };
 
   const contentInnerStyle: React.CSSProperties = {
-    top: scrollTop,
+    top:
+      pageIndex === contentStartPageIndex
+        ? scrollTop
+        : scrollTop + totalOccupiedHeight - DEFAULT_PADDING,
     position: "absolute",
     width: "-webkit-fill-available",
     height: "auto",
   };
 
   return (
-    <div style={containerStyle}>
+    <div ref={containerNode} style={containerStyle}>
       <div ref={contentWindowNode} style={contentWindowStyle}>
         <div ref={contentNode} style={contentInnerStyle}>
           {sectionIndex === "0" ? CONTENT : <b>{sectionIndex}</b>}

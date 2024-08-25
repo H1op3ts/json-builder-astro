@@ -1,11 +1,16 @@
-import React, { useEffect, useState } from "react";
-import map from "lodash/map";
 import capitalize from "lodash/capitalize";
+import map from "lodash/map";
 import random from "lodash/random";
 import range from "lodash/range";
+import React, { useEffect, useState } from "react";
 import { Responsive, WidthProvider } from "react-grid-layout";
 import { Preview } from "./Preview";
-import { COLS_COUNT, DEFAULT_GAP, SECTIONS_COUNT } from "./constants";
+import {
+  COLS_COUNT,
+  DEFAULT_GAP,
+  ROW_HEIGHT,
+  SECTIONS_COUNT,
+} from "./constants";
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 
 function generateLayout() {
@@ -22,17 +27,57 @@ function generateLayout() {
   });
 }
 
+const LAYOUT_1 = [
+  {
+    x: 0,
+    y: 5,
+    w: 4,
+    h: 5,
+    i: "0",
+    moved: false,
+    static: false,
+  },
+  {
+    x: 3,
+    y: 0,
+    w: 4,
+    h: 2,
+    i: "1",
+    moved: false,
+    static: false,
+  },
+  {
+    x: 3,
+    y: 2,
+    w: 5,
+    h: 3,
+    i: "2",
+    moved: false,
+    static: false,
+  },
+  {
+    x: 8,
+    y: 2,
+    w: 4,
+    h: 4,
+    i: "3",
+    moved: false,
+    static: false,
+  },
+];
+
 export const ShowLayout = (props) => {
-  const { initialLayout = generateLayout(), layout } = props;
+  const { initialLayout = LAYOUT_1, layout } = props;
 
   const [currentBreakpoint, setCurrentBreakpoint] = useState("lg");
-  const [compactType, setCompactType] = useState("horizontal");
+  const [compactType, setCompactType] = useState(null);
   const [mounted, setMounted] = useState(false);
-  const [layouts, setLayouts] = useState({ lg: initialLayout });
+  const [layouts, setLayouts] = useState({ lg: [] });
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    setLayouts({ lg: initialLayout });
+  }, [initialLayout]);
 
   const generateDOM = () => {
     return map(layouts.lg, function (l, i) {
@@ -61,6 +106,23 @@ export const ShowLayout = (props) => {
     props.onLayoutChange(layout, layouts);
   };
 
+  const pushedLayout = layout.map((l) => ({
+    ...l,
+    pushedBy: layout
+      .filter((la) => {
+        const curCols = Array(l.w)
+          .fill(0)
+          .map((_, i) => l.x + i);
+        const compareCols = Array(la.w)
+          .fill(0)
+          .map((_, i) => la.x + i);
+
+        const hasIntersection = curCols.some((i) => compareCols.includes(i));
+        return la.y < l.y && hasIntersection;
+      })
+      .map((lay) => lay.i),
+  }));
+
   return (
     <div>
       <div>Current Breakpoint</div>
@@ -74,11 +136,13 @@ export const ShowLayout = (props) => {
         measureBeforeMount={false}
         useCSSTransforms={mounted}
         compactType={compactType}
+        rowHeight={ROW_HEIGHT}
+        verticalCompact
         preventCollision={!compactType}
       >
         {generateDOM()}
       </ResponsiveReactGridLayout>
-      <Preview layout={layout} colsCount={COLS_COUNT} />
+      <Preview layout={pushedLayout} colsCount={COLS_COUNT} />
     </div>
   );
 };

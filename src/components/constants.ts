@@ -14,4 +14,5 @@ export const CONTENT =
 export const DEFAULT_GAP = 10;
 export const DEFAULT_PADDING = 10;
 export const SECTIONS_COUNT = 3;
+export const ROW_HEIGHT = 100;
 export const COLS_COUNT = 12;
