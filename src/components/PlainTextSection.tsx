@@ -17,7 +17,8 @@ import {
 
 type TPlainTextSectionProps = {
   layout: ReactGridLayout.Layout;
-  totalOccupiedHeight: number;
+  contentStartPageSectionShift: number;
+  currentPageSectionShift: number;
   onSetMeasurements: TSetMeasurements;
   onUpdateMeasurements: TUpdateMeasurements;
   gridItemRelativeWidth: number;
@@ -33,7 +34,8 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = (props) => {
   const {
     layout,
     gridItemRelativeWidth,
-    totalOccupiedHeight,
+    contentStartPageSectionShift,
+    currentPageSectionShift,
     isLast,
     contentWindowHeight,
     contentStartPageIndex,
@@ -65,8 +67,8 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = (props) => {
 
   const translateY =
     contentStartPageIndex === pageIndex
-      ? totalOccupiedHeight
-        ? totalOccupiedHeight
+      ? contentStartPageSectionShift
+        ? contentStartPageSectionShift
         : offsetHeight
       : 0;
 
@@ -78,13 +80,19 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = (props) => {
     if (isLast) {
       const actualHeight =
         (parseInt(computedStyle.height) % contentWindowHeight) +
-        DEFAULT_PADDING * 2;
+        DEFAULT_PADDING * 2 +
+        currentPageSectionShift;
       setActualContainerHeight(actualHeight);
       onUpdateMeasurements(pageIndex, sectionIndex, {
         occupiedHeight: actualHeight,
       });
     }
-  }, [isLast, contentNode.current, contentWindowHeight]);
+  }, [
+    isLast,
+    contentNode.current,
+    contentWindowHeight,
+    currentPageSectionShift,
+  ]);
 
   useEffect(() => {
     if (!contentNode.current || !containerNode.current) return;
@@ -112,6 +120,7 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = (props) => {
         return {
           scrollTop: -(maxLinesPerPage * i * lineHeight),
           contentWindowHeight: maxLinesPerPage * lineHeight,
+          lineHeight,
           occupiedHeight: 0,
           isLast: i === pagesCountToFitContent - 1,
         };
@@ -131,20 +140,20 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = (props) => {
     }
     onUpdateMeasurements(pageIndex, sectionIndex, {
       occupiedHeight:
-        pageIndex === contentStartPageIndex && !totalOccupiedHeight
+        pageIndex === contentStartPageIndex && !contentStartPageSectionShift
           ? parseInt(containerComputedStyle.height) + offsetHeight
           : parseInt(containerComputedStyle.height),
     });
   }, [containerComputedStyle?.height]);
 
   useEffect(() => {
-    if (!isMeasured.current || !totalOccupiedHeight || isLast) {
+    if (!isMeasured.current || !contentStartPageSectionShift || isLast) {
       return;
     }
     const actualHeight =
-      availablePageSectionContainerHeight - totalOccupiedHeight;
+      availablePageSectionContainerHeight - contentStartPageSectionShift;
     setActualContainerHeight(actualHeight);
-  }, [totalOccupiedHeight]);
+  }, [contentStartPageSectionShift]);
 
   const containerStyle: React.CSSProperties = {
     width: gridItemRelativeWidth * layout.w + (layout.w - 1) * DEFAULT_GAP,
@@ -169,8 +178,8 @@ export const PlainTextSection: FC<TPlainTextSectionProps> = (props) => {
   const contentInnerStyle: React.CSSProperties = {
     top:
       pageIndex === contentStartPageIndex
-        ? scrollTop
-        : scrollTop + totalOccupiedHeight - DEFAULT_PADDING,
+        ? 0
+        : scrollTop + currentPageSectionShift,
     position: "absolute",
     width: "-webkit-fill-available",
     height: "auto",

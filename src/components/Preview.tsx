@@ -1,6 +1,12 @@
 import React, { FC, useEffect, useRef, useState } from "react";
 import ReactGridLayout from "react-grid-layout";
-import { CURRENT_FORMAT, DEFAULT_GAP, DIMENSIONS } from "./constants";
+import {
+  CURRENT_FORMAT,
+  DEFAULT_GAP,
+  DEFAULT_LINEHEIGHT,
+  DEFAULT_PADDING,
+  DIMENSIONS,
+} from "./constants";
 import { PlainTextSection } from "./PlainTextSection";
 import {
   TSectionPageMeasurements,
@@ -16,6 +22,7 @@ type TPreviewProps = {
 const DEFAULT_MEASUREMENT = {
   scrollTop: 0,
   contentWindowHeight: 0,
+  lineHeight: DEFAULT_LINEHEIGHT,
   occupiedHeight: null,
   isLast: true,
 };
@@ -27,6 +34,14 @@ export const Preview: FC<TPreviewProps> = ({ colsCount, layout }) => {
       index: i,
     })),
   ]);
+
+  const shifts = useRef(
+    layout.reduce((all, l) => {
+      all[l.i] = 0;
+      return all;
+    }, {})
+  );
+
   const pageRef = useRef(pages);
 
   useEffect(() => {
@@ -101,7 +116,7 @@ export const Preview: FC<TPreviewProps> = ({ colsCount, layout }) => {
 
               l.shiftedByTree.forEach((shiftedBy) => {
                 const shift = shiftedBy.reduce((acc, i) => {
-                  acc += sections[parseInt(i)]?.occupiedHeight || 0;
+                  acc += sections[i]?.occupiedHeight || 0;
                   return acc;
                 }, 0);
 
@@ -111,7 +126,7 @@ export const Preview: FC<TPreviewProps> = ({ colsCount, layout }) => {
                 }
               });
 
-              const totalOccupiedHeight = l.shiftedByTree.length
+              const contentStartPageSectionShift = l.shiftedByTree.length
                 ? maxShift + actualShiftedBy.length * DEFAULT_GAP // include gaps
                 : 0;
 
@@ -120,12 +135,26 @@ export const Preview: FC<TPreviewProps> = ({ colsCount, layout }) => {
 
               const contentStartPageIndex = l.shiftedByTree.length
                 ? pageRef.current.reduce((result, sections, i) => {
-                    if (actualShiftedBy.some((i) => sections[parseInt(i)])) {
+                    if (actualShiftedBy.some((i) => sections[i])) {
                       result = i;
                     }
                     return result;
                   }, 0)
                 : 0;
+
+              const isContentStartPage = contentStartPageIndex === pageIndex;
+
+              if (isContentStartPage) {
+                shifts.current = {
+                  ...shifts.current,
+                  [l.i]: contentStartPageSectionShift - DEFAULT_PADDING,
+                };
+              }
+
+              const currentPageSectionShift = isContentStartPage
+                ? 0
+                : Math.floor(shifts.current[l.i] / section?.lineHeight) *
+                  section?.lineHeight;
 
               return (
                 <PlainTextSection
@@ -134,7 +163,8 @@ export const Preview: FC<TPreviewProps> = ({ colsCount, layout }) => {
                   isLast={section?.isLast}
                   contentWindowHeight={section?.contentWindowHeight}
                   scrollTop={section?.scrollTop}
-                  totalOccupiedHeight={totalOccupiedHeight}
+                  contentStartPageSectionShift={contentStartPageSectionShift}
+                  currentPageSectionShift={currentPageSectionShift}
                   gridItemRelativeWidth={gridItemRelativeWidth}
                   contentStartPageIndex={contentStartPageIndex}
                   onSetMeasurements={handleSetMeasurements}
